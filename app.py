@@ -1,11 +1,23 @@
-import json, boto3, domovoi
+import os, json
+import boto3, domovoi
+from slackclient import SlackClient
 
 app = domovoi.Domovoi()
 
-# Use the following command to log a CloudWatch Logs message that will trigger this handler:
-# python -c'import watchtower as w, logging as l; L=l.getLogger(); L.addHandler(w.CloudWatchLogHandler()); L.error(dict(x=8))'
-# See http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html for the filter pattern syntax
-@app.cloudwatch_logs_sub_filter_handler(log_group_name="watchtower", filter_pattern="{$.x = 8}")
+slack_token = os.environ["SLACK_API_TOKEN"]
+slack = SlackClient(slack_token)
+
+@app.cloudwatch_logs_sub_filter_handler(log_group_name="/aws/lambda/jma-xml_atomfeed", filter_pattern='Error')
 def monitor_cloudwatch_logs(event, context):
-    print("Got a CWL subscription filter event:", event)
+    toslack('jma-xml_atomfeed', event['logEvents'][0]['message'])
+
+
+
+def toslack(name, message):
+    slack.api_call(
+        "chat.postMessage",
+        channel="#error",
+        text="[" + name + "] " + message
+    )
+
 
