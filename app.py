@@ -1,5 +1,5 @@
 import os, json
-import boto3, domovoi
+import domovoi
 from slackclient import SlackClient
 
 app = domovoi.Domovoi()
@@ -7,9 +7,10 @@ app = domovoi.Domovoi()
 slack_token = os.environ["SLACK_API_TOKEN"]
 slack = SlackClient(slack_token)
 
-@app.cloudwatch_logs_sub_filter_handler(log_group_name="/aws/lambda/jma-xml_atomfeed", filter_pattern='Error')
-def monitor_cloudwatch_logs(event, context):
-    toslack('jma-xml_atomfeed', event['logEvents'][0]['message'])
+for func in ["jma-xml_atomfeed", "grib2tiles_download_msm", "grib2tiles_msm", "grib2tiles_tile-json-msm", "amedas_scrape-geojson"]:
+    @app.cloudwatch_logs_sub_filter_handler(log_group_name="/aws/lambda/" + func, filter_pattern='Error')
+    def monitor_cloudwatch_logs(event, context):
+        toslack(func, event['logEvents'][0]['message'])
 
 
 
